@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 17e27490cc72d8d47b29202687c2fae2, type: 3}
   m_Name: ShipSettings
   m_EditorClassIdentifier: 
-  _maxSpeed: 5
+  _maxSpeed: 150
   _rotationSpeed: 180
-  _acceleration: 1
+  _acceleration: 20
   _keyboardRotationSpeed: 90

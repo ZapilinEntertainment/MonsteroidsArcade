@@ -67,13 +67,16 @@ namespace MonsteroidsArcade
             {
                 PlayerController.Spawn();
                 _gameStarted = true;
+                _isPaused = false;
                 _pauseEvent(false);
             }
         }
 
         public void PauseSwitch()
         {
-
+            _isPaused = !_isPaused;
+            _pauseEvent(IsPaused);
+            _mainMenuUI.ActivateWindow(true);
         }
     }
 }

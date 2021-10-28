@@ -18,6 +18,7 @@ namespace MonsteroidsArcade
         {
             _gameManager = gm;
             _isPaused = _gameManager.IsPaused;
+            _gameManager.SubscribeToPauseEvent(this);
             if (_shipSettings == null)
             {
                 _shipSettings = new ShipSettings();
@@ -39,16 +40,23 @@ namespace MonsteroidsArcade
 
         private void Update()
         {
+            if (_isPaused) return;
+            float t = Time.deltaTime;
             if (_rotation != _targetRotation)
             {
-                _rotation = Quaternion.RotateTowards(_rotation, _targetRotation, _shipSettings.RotationSpeed * Time.deltaTime);
+                _rotation = Quaternion.RotateTowards(_rotation, _targetRotation, _shipSettings.RotationSpeed * t);
                 _sprite.rotation = _rotation;
+            }
+            if (_accelerate)
+            {
+                MoveVector = Vector3.MoveTowards(MoveVector, (_rotation * Vector3.up) * _shipSettings.MaxSpeed, _shipSettings.Acceleration * t);
+                MoveVector = (_rotation * Vector3.up) * _shipSettings.MaxSpeed;
             }
         }
 
         public void Fire()
         {
-
+            if (!_isPaused) return;
         }
         public void RotateToPoint(Vector3 point)
         {

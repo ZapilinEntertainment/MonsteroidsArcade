@@ -17,10 +17,10 @@ namespace MonsteroidsArcade
             if (!_prepared)
             {
                 _gameManager = gm;
-                _playerController = pc;
-                _isPaused = _gameManager.IsPaused;
-                _keyboardOnly = GameConstants.IsControlKeyboardOnly();
                 _gameManager.SubscribeToPauseEvent(this);
+                _isPaused = _gameManager.IsPaused;
+                _playerController = pc;                
+                _keyboardOnly = GameConstants.IsControlKeyboardOnly();                
                 _prepared = true;
             }
         }
@@ -29,10 +29,8 @@ namespace MonsteroidsArcade
         {
             _isPaused = x;
             _accelerating = false;
-            if (x) _keyboardOnly = GameConstants.IsControlKeyboardOnly(); // управление могло поменяться во время паузы
-            else {
-                _lastMousePosition = Input.mousePosition;
-                    }
+            _keyboardOnly = GameConstants.IsControlKeyboardOnly(); // управление могло поменяться во время паузы
+            _lastMousePosition = Input.mousePosition;
         }
 
         private void Update()
@@ -46,17 +44,16 @@ namespace MonsteroidsArcade
                     if (!_isPaused)
                     {
                         bool newAcceleratingVal = false;
-                        float x;
+                        float x = Input.GetAxisRaw("Vertical");
+                        newAcceleratingVal = x != 0f;
                         if (_keyboardOnly)
                         {
                             x = Input.GetAxis("Horizontal");
-                            if (x != 0f) _playerController.Rotate(x * Time.deltaTime);
-                            x = Input.GetAxisRaw("Vertical");
-                            newAcceleratingVal = x != 0f;
+                            if (x != 0f) _playerController.Rotate(-x * Time.deltaTime);                            
                         }
                         else
                         {
-                            if (Input.GetMouseButtonDown(1)) newAcceleratingVal = true;
+                            if (!newAcceleratingVal) newAcceleratingVal = Input.GetMouseButton(1);
                             var mpos = Input.mousePosition;
                             if (mpos != _lastMousePosition)
                             {

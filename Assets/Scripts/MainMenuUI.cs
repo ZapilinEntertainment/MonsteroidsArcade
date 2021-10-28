@@ -25,7 +25,8 @@ namespace MonsteroidsArcade
         }
         public void ContinueButton()
         {
-
+            _gameManager.PauseSwitch();
+            _menuPanel.SetActive(false);
         }
         public void StartGameButton()
         {

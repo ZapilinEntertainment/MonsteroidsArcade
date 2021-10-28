@@ -8,6 +8,7 @@ namespace MonsteroidsArcade {
         [SerializeField] private float _simulationTick = 0.01f;
         private bool _prepared = false, _isPaused = false, _tick1 = false;
         private int _fastObjectsCount = 0, _slowObjectsCount = 0, _fastObjectsMask = 0;
+        private float _screenWidth, _screenHeight;
         private GameManager _gameManager;
         private PlayerController _playerController;
         private Transform _playerTransform;
@@ -16,11 +17,14 @@ namespace MonsteroidsArcade {
         public void Prepare(GameManager gm, PlayerController pc)
         {
             _gameManager = gm;
+            _isPaused = _gameManager.IsPaused;
+            _gameManager.SubscribeToPauseEvent(this);
+
             _playerController = pc;
             _playerTransform = pc.transform;
             Time.fixedDeltaTime = _simulationTick;
             _prepared = true;
-            _isPaused = _gameManager.IsPaused;
+            
             _fastObjects = new List<SpaceObject>();
             _slowObjects = new List<SpaceObject>();
             //
@@ -32,6 +36,8 @@ namespace MonsteroidsArcade {
                     _fastObjectsMask += (1 << i);
                 }
             }
+            _screenWidth = Screen.width;
+            _screenHeight = Screen.height;
         }
         
         public void AddObjectToSimulation(SpaceObject so)
@@ -54,11 +60,11 @@ namespace MonsteroidsArcade {
             if (_prepared & !_isPaused)
             {
                 bool calculatePlayer = !_playerController.IsInvincible;
-                Vector3 playerPos = _playerTransform.position + _playerController.MoveVector * _simulationTick;
-                 _playerTransform.position= playerPos;
+                Vector3 playerPos = _playerTransform.position + _playerController.MoveVector * _simulationTick;               
+                _playerTransform.position= CheckPosition(playerPos);
 
                 if (calculatePlayer)
-                {
+                {                   
                     // симуляция с учетом корабля игрока
                     if (_fastObjectsCount > 0)
                     {
@@ -73,12 +79,21 @@ namespace MonsteroidsArcade {
                         {
                             foreach (SpaceObject so in _fastObjects)
                             {
-                                so.transform.position += so.MoveVector * _simulationTick;
+                                so.transform.position += so.MoveVector * _simulationTick * 2f;
                             }
                         }
                     }
                 }
                 _tick1 = !_tick1;
+
+                Vector3 CheckPosition( Vector3 pos)
+                {
+                    if (pos.x < 0f) pos.x = _screenWidth + pos.x;
+                    else if (pos.x > _screenWidth) pos.x -= _screenWidth;
+                    if (pos.y < 0f) pos.y = _screenHeight + pos.y;
+                    else if (pos.y > _screenHeight) pos.y -= _screenHeight;
+                    return pos;
+                }
             }
         }
 
