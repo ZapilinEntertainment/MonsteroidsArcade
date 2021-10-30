@@ -10,31 +10,28 @@ namespace MonsteroidsArcade {
         [SerializeField] private float _simulationTick = 1f / 120f;
         private BitArray _presentedObjectsMask;
         private bool _prepared = false, _isPaused = false, _needToClear = false;
-        private SpaceObjectType _asteroidsMask, _playerKillerMask, _ufoKillerMask, _playerBulletTargetMask, _ufoBulletTargetMask;
+        private SpaceObjectType _asteroidsMask;
         private float _screenWidth, _screenHeight;
         private GameManager _gameManager;
         private PlayerController _playerController;
         private UFO _ufo;
         private Transform _playerTransform, _ufoTransform;
-        private Dictionary<SpaceObject, Transform> _asteroidsList, _playerBulletsList, _ufoBulletsList;
-        private SpaceObject _playerBulletToDelete, _ufoBulletToDelete; // пули, вылетевшие за край экрана;две пули оказавшиеся вне экрана в один фрейм - крайне редкий сценарий
+        private Dictionary<SpaceObject, Transform> _asteroidsList, _playerBulletsList, _ufoBulletsList;      
         private HashSet<SpaceObject> _playerBulletsClearList, _asteroidsClearList; // список для очищения. Hashset так как не допускает повторений и порядок неважен 
         private PoolManager _poolManager;
+        private GameSettings _gameSettings;
         public void Prepare(GameManager gm, PlayerController pc)
         {
             _gameManager = gm;
             _isPaused = _gameManager.IsPaused;
             _gameManager.SubscribeToPauseEvent(this);
+            _gameSettings = _gameManager.GameSettings;
 
             _playerController = pc;
             _playerTransform = pc.transform;
             Time.fixedDeltaTime = _simulationTick;            
             //
             _asteroidsMask = SpaceObjectType.SmallAsteroid | SpaceObjectType.MediumAsteroid | SpaceObjectType.BigAsteroid;
-            _playerKillerMask = _asteroidsMask | SpaceObjectType.UFOBullet;
-            _ufoKillerMask = _asteroidsMask | SpaceObjectType.UFOBullet;
-            _playerBulletTargetMask = _asteroidsMask | SpaceObjectType.UFO;
-            _ufoBulletTargetMask =  SpaceObjectType.Player;
             //
             _asteroidsList = new Dictionary<SpaceObject, Transform>();
             _playerBulletsList = new Dictionary<SpaceObject, Transform>();
@@ -47,6 +44,7 @@ namespace MonsteroidsArcade {
             //
             _screenWidth = Screen.width;
             _screenHeight = Screen.height;
+            Bullet.Prepare(_screenWidth, _gameManager.MotionCalculator);
             //
             _prepared = true;
         }
@@ -97,19 +95,64 @@ namespace MonsteroidsArcade {
                 }
             }
         }
+        public void CreateBigAsteroids(int count)
+        {
+            float pc = 1f / count, x,
+                widthPart = _screenWidth / (_screenWidth + _screenHeight) * 0.5f,
+                heightPart = 0.5f - widthPart,
+                perimeter = 2f * _screenWidth + 2f * _screenHeight
+                ;
+            // делим периметр экрана на 4 неравноценные части
+            Vector3 position;
+            SpaceObject so;
+            for (int i = 0; i < count; i++)
+            {
+                x = Random.value;
+                if (x > 0.5f)
+                {
+                    if (x < widthPart)
+                    { // нижняя граница экрана
+                        position = new Vector3(((i + x) * pc) * perimeter, 0f, 0f);
+                    }
+                    else
+                    {// правая граница экрана
+                        position = new Vector3(_screenWidth, ((i + x) * pc - widthPart) * perimeter, 0f);
+                    }
+                }
+                else
+                {
+                    x -= 0.5f;
+                    if (x < widthPart)
+                    { // верхняя граница экрана
+                        position = new Vector3((1f - heightPart - (i + x) * pc) * perimeter, _screenHeight, 0f);
+                    }
+                    else
+                    { // левая граница экрана
+                        position = new Vector3(0f, (1f - (i + x) * pc) * perimeter, 0f);
+                    }
+                }
+
+                position = new Vector3(Random.value * _screenWidth, Random.value * _screenHeight, 0f);
+                so = _poolManager.CreateObject(SpaceObjectType.BigAsteroid, position);
+                so.SetMoveVector((Quaternion.Euler(0f, 0f, Random.value * 360f) * Vector3.up) * _gameSettings.GetObjectSpeed(SpaceObjectType.BigAsteroid));
+                _asteroidsList.Add(so, so.transform);
+            }
+            _presentedObjectsMask[(int)CalculatingType.Asteroids] = true;
+        }
 
         private void FixedUpdate()
-        {
-            
+        {            
             if (_prepared & !_isPaused)
             {
                 Vector3 pos0;
                 Transform t;
                 // MOVEMENT
+                _presentedObjectsMask[(int)CalculatingType.Player] = !_playerController.IsDestroyed;
                 if (ObjectsPresented(CalculatingType.Player))
                 {
                     _playerTransform.position = CheckPosition(_playerTransform.position + _playerController.MoveVector * _simulationTick);
                 }
+                
                 if (ObjectsPresented(CalculatingType.UFO))
                 {
                     _ufoTransform.position = CheckPosition(_ufoTransform.position + _ufo.MoveVector * _simulationTick);
@@ -120,15 +163,8 @@ namespace MonsteroidsArcade {
                     foreach (var a in _playerBulletsList)
                     {
                         t = a.Value;
-                        pos0 = t.position + a.Key.MoveVector * _simulationTick;
-                        t.position = pos0;
-                        if (IsOutOfTheScreen(pos0)) _playerBulletToDelete = a.Key;
+                        t.position = t.position + a.Key.MoveVector * _simulationTick;
                     }
-                }
-                if (_playerBulletToDelete != null)
-                {
-                    DestroyPlayerBullet(_playerBulletToDelete);
-                    _playerBulletToDelete = null;
                 }
                 //
                 if (ObjectsPresented(CalculatingType.UfoBullet))
@@ -136,20 +172,17 @@ namespace MonsteroidsArcade {
                     foreach (var a in _ufoBulletsList)
                     {
                         t = a.Value;
-                        pos0 = t.position + a.Key.MoveVector * _simulationTick;
-                        t.position = pos0;
-                        if (IsOutOfTheScreen(pos0)) _ufoBulletToDelete = a.Key;
+                        t.position = t.position + a.Key.MoveVector * _simulationTick;
                     }
-                }
-                if (_ufoBulletToDelete != null)
-                {
-                    DestroyUfoBullet(_ufoBulletToDelete);
-                    _ufoBulletToDelete = null;
                 }
                 //
                 if (ObjectsPresented(CalculatingType.Asteroids))
                 {
-                    foreach (var a in _asteroidsList) a.Value.position = CheckPosition(a.Key.MoveVector * _simulationTick);
+                    foreach (var a in _asteroidsList)
+                    {
+                        t = a.Value;
+                        t.position = CheckPosition(t.position + a.Key.MoveVector * _simulationTick);
+                    }
                 }
 
                 
@@ -161,10 +194,6 @@ namespace MonsteroidsArcade {
                     if (pos.y < 0f) pos.y = _screenHeight + pos.y;
                     else if (pos.y > _screenHeight) pos.y -= _screenHeight;
                     return pos;
-                }
-                bool IsOutOfTheScreen(in Vector3 pos)
-                {
-                    return (pos.x < 0f || pos.y < 0f || pos.x > _screenWidth || pos.y > _screenHeight);
                 }
                 // COLLISIONS
                 float r0, r, xd, yd;
@@ -278,24 +307,13 @@ namespace MonsteroidsArcade {
                 {
                     _ufo.MakeDestroyed();
                     _presentedObjectsMask[(int)CalculatingType.UFO] = false;
-                }
-                void DestroyUfoBullet(in SpaceObject so)
-                {
-                    so.MakeDestroyed();
-                    _ufoBulletsList.Remove(so);
-                    _presentedObjectsMask[(int)CalculatingType.UfoBullet] = _ufoBulletsList.Count != 0;
-                }
-                void DestroyPlayerBullet(in SpaceObject so)
-                {
-                    so.MakeDestroyed();
-                    _playerBulletsList.Remove(so);
-                    _presentedObjectsMask[(int)CalculatingType.PlayerBullet] = _playerBulletsList.Count != 0;
-                }
+                }                
                 void DestroyAsteroid(in SpaceObject so)
                 {
                     so.MakeDestroyed();
                     _asteroidsList.Remove(so);
                     _presentedObjectsMask[(int)CalculatingType.Asteroids] = _asteroidsList.Count != 0;
+                    _poolManager.ReturnToPool(so);
                 }
 
                 bool ObjectsPresented(CalculatingType co)
@@ -303,6 +321,29 @@ namespace MonsteroidsArcade {
                     return _presentedObjectsMask[(int)co];
                 }
             }
+        }
+
+        private void DestroyUfoBullet(in SpaceObject so)
+        {
+            so.MakeDestroyed();
+            _ufoBulletsList.Remove(so);
+            _presentedObjectsMask[(int)CalculatingType.UfoBullet] = _ufoBulletsList.Count != 0;
+            _poolManager.ReturnToPool(so);
+        }
+        private void DestroyPlayerBullet(SpaceObject so)
+        {
+            so.MakeDestroyed();
+            _playerBulletsList.Remove(so);
+            _presentedObjectsMask[(int)CalculatingType.PlayerBullet] = _playerBulletsList.Count != 0;
+            _poolManager.ReturnToPool(so);
+        }
+        public void DestroyBullet(Bullet b)
+        {
+            if (b.ObjectType == SpaceObjectType.PlayerBullet)
+            {
+                DestroyPlayerBullet(b);
+            }
+            else DestroyUfoBullet(b);
         }
 
         public void SetPause(bool x)

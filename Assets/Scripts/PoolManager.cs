@@ -8,8 +8,27 @@ namespace MonsteroidsArcade
     {
         private Dictionary<SpaceObjectType, PoolCell> _pools;
         private Transform _objectsHost;
+        public override bool Equals(object obj)
+        {
+            // Check for null values and compare run-time types.
+            if (obj == null || GetType() != obj.GetType())
+                return false;
 
-        public PoolManager(Transform _objectsHost)
+            else return true;
+        }
+        public static bool operator ==(PoolManager A, PoolManager B)
+        {
+            if (ReferenceEquals(A, null))
+            {
+                return ReferenceEquals(B, null);
+            }
+            return A.Equals(B);
+        }
+        public static bool operator !=(PoolManager A, PoolManager B)
+        {
+            return !(A == B);
+        }
+        public PoolManager(Transform i_objectsHost)
         {
             _pools = new Dictionary<SpaceObjectType, PoolCell>()
             {
@@ -19,6 +38,7 @@ namespace MonsteroidsArcade
                 { SpaceObjectType.PlayerBullet, new PoolCell("playerBullet")},
                 { SpaceObjectType.UFOBullet, new PoolCell("ufoBullet")}
             };
+            _objectsHost = i_objectsHost;
         }
 
         public SpaceObject CreateObject(SpaceObjectType type, Vector3 position)
@@ -34,11 +54,20 @@ namespace MonsteroidsArcade
             }
         }
 
+        public void ReturnToPool(SpaceObject so)
+        {
+            if (_pools.ContainsKey(so.ObjectType))
+            {
+                _pools[so.ObjectType].ReturnToPool(so);
+            }
+            else Debug.Log("warning - wrong type of pooling object");
+        }
+
         private class PoolCell
         {
             private Stack<SpaceObject> _pool;
             private GameObject _prefabLink;
-            private bool _isEmpty;
+            private bool _isEmpty { get { return _pool.Count == 0; } }
             private const string RESOURCES_PATH = "Prefabs/";
 
 
@@ -46,7 +75,6 @@ namespace MonsteroidsArcade
             {
                 _prefabLink = Resources.Load<GameObject>(RESOURCES_PATH + name);
                 _pool = new Stack<SpaceObject>();
-                _isEmpty = true;
             }
 
             public SpaceObject Instantiate(Transform host, Vector3 position)
@@ -57,9 +85,15 @@ namespace MonsteroidsArcade
                     var g = _pool.Pop();
                     g.transform.position = position;
                     g.gameObject.SetActive(true);
-                    _isEmpty = _pool.Count == 0;
                     return g;
                 }
+            }      
+            
+            public void ReturnToPool(SpaceObject so)
+            {
+                _pool.Push(so);
+                so.Stop();
+                so.gameObject.SetActive(false);
             }
         }
     }

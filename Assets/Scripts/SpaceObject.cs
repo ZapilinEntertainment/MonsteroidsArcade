@@ -42,9 +42,14 @@ namespace MonsteroidsArcade
             Gizmos.DrawWireSphere(transform.position, _radius);
         }
 
-        virtual public void MakeDestroyed()
+        virtual public void MakeDestroyed() { }
+        virtual public void Stop()
         {
-
+            MoveVector = Vector3.zero;
+        }
+        virtual public void SetMoveVector(Vector3 v)
+        {
+            MoveVector = v;
         }
     }
 }

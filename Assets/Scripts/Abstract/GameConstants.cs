@@ -3,6 +3,7 @@ namespace MonsteroidsArcade
 {
     public static class GameConstants
     {
+        // #settings системные настройки
         private const string CONTROLS_CONFIG_KEY = "controlByKeyboardOnly";
 
         public static bool IsControlKeyboardOnly()

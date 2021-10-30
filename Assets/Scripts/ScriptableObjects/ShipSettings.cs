@@ -8,6 +8,9 @@ namespace MonsteroidsArcade
     [CreateAssetMenu(fileName = "ShipSettings", menuName = "ScriptableObjects/ShipSettingsObject", order = 1)]
     public sealed class ShipSettings : ScriptableObject
     {
+        
+        // #settings настройки управления
+
         [SerializeField] private float _maxSpeed = 5f, _rotationSpeed = 35f, _acceleration = 1f, _keyboardRotationSpeed = 90f; 
 
         public float MaxSpeed => _maxSpeed;

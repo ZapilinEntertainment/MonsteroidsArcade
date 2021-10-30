@@ -10,7 +10,7 @@ namespace MonsteroidsArcade
     {
         [SerializeField] private GameSettings _gameSettings;
         [SerializeField] private RectTransform _gameZoneHost;
-        public GameManager Current { get; private set; }
+        public static GameManager Current { get; private set; }
         public PlayerController PlayerController { get; private set; }
         public MotionCalculator MotionCalculator { get; private set; }
         public RectTransform GameZoneHost => _gameZoneHost;
@@ -72,7 +72,14 @@ namespace MonsteroidsArcade
                 _gameStarted = true;
                 _isPaused = false;
                 _pauseEvent(false);
+                //
+                MotionCalculator.CreateBigAsteroids(2);
             }
+        }
+
+        public void GameOver()
+        {
+            Debug.Log("game over");
         }
 
         public void PauseSwitch()
