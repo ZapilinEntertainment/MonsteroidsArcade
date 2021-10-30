@@ -2,15 +2,18 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
+using UnityEngine.UI;
 
 namespace MonsteroidsArcade
 {
     public sealed class GameManager : MonoBehaviour
     {
         [SerializeField] private GameSettings _gameSettings;
+        [SerializeField] private RectTransform _gameZoneHost;
         public GameManager Current { get; private set; }
         public PlayerController PlayerController { get; private set; }
         public MotionCalculator MotionCalculator { get; private set; }
+        public RectTransform GameZoneHost => _gameZoneHost;
         public GameSettings GameSettings => _gameSettings;
         private MainMenuUI _mainMenuUI;
         private Action<bool> _pauseEvent;
@@ -39,7 +42,7 @@ namespace MonsteroidsArcade
                 return;
             }
             _mainMenuUI.Prepare(this);
-            //             
+            //
             PlayerController = FindObjectOfType<PlayerController>();
             if (PlayerController == null)
             {

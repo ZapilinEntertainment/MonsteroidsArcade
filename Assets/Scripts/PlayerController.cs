@@ -9,6 +9,7 @@ namespace MonsteroidsArcade
         [SerializeField] private ShipSettings _shipSettings;
         [SerializeField] private Transform _sprite;
         public bool IsInvincible { get; private set; }
+        public bool IsDestroyed { get; private set; }
         private GameManager _gameManager;
         private Quaternion _rotation, _targetRotation;
         private InputManager _inputManager;

@@ -1,27 +1,28 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using System;
 
 namespace MonsteroidsArcade
 {
-    public enum SpaceObjectType : byte { PlayerShip = 0, SmallAsteroid, MediumAsteroid, BigAsteroid, UFO, PlayerBullet, UFOBullet, Total }
+    [Flags]
+    public enum SpaceObjectType : byte { Player = 1, SmallAsteroid = 2, MediumAsteroid = 4, BigAsteroid = 8, 
+        UFO = 16, PlayerBullet = 32, UFOBullet = 64}
     public static class SpaceObjectTypeExtension
     {
-        public static bool IsFastObject(this SpaceObjectType type)
+        public static CalculatingType DefineCalculatingType(this SpaceObjectType type)
         {
             switch (type)
-            {                
-                case SpaceObjectType.PlayerShip:
-                case SpaceObjectType.SmallAsteroid:
-                case SpaceObjectType.PlayerBullet:
-                case SpaceObjectType.UFOBullet:
-                    return true;
-                default:
-                    return false;
+            {
+                case SpaceObjectType.Player: return CalculatingType.Player;
+                case SpaceObjectType.UFO: return CalculatingType.UFO;
+                case SpaceObjectType.PlayerBullet: return CalculatingType.PlayerBullet;
+                case SpaceObjectType.UFOBullet: return CalculatingType.UfoBullet;
+                default: return CalculatingType.Asteroids;
             }
-        } 
+        }
     }
-    
+
     public class SpaceObject : MonoBehaviour
     {
         [SerializeField] private SpaceObjectType _type;
@@ -30,7 +31,6 @@ namespace MonsteroidsArcade
         
         public Vector3 MoveVector { get; protected set; }
         public float Radius => _radius;
-        public bool Simulating { get; protected set; }
 
         private void Start()
         {
@@ -40,6 +40,11 @@ namespace MonsteroidsArcade
         private void OnDrawGizmos()
         {
             Gizmos.DrawWireSphere(transform.position, _radius);
+        }
+
+        virtual public void MakeDestroyed()
+        {
+
         }
     }
 }
