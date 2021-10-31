@@ -24,5 +24,6 @@ MonoBehaviour:
   _startInvincibilityTime: 3
   _respawnDelay: 0.5
   _playerFireCooldown: 0.33333334
-  _bulletSpeed: 25
+  _bulletSpeed: 8
+  _nextRoundDelay: 2
   _speedCoefficient: 10
