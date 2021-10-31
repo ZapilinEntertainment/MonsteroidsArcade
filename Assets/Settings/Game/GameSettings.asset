@@ -18,3 +18,11 @@ MonoBehaviour:
   _mediumAsteroidMaxSpeed: 6
   _bigAsteroidMinSpeed: 1.5
   _bigAsteroidMaxSpeed: 3
+  _playerLivesCount: 3
+  _startAsteroidsCount: 2
+  _asteroidsPerLevelSurplus: 2
+  _startInvincibilityTime: 3
+  _respawnDelay: 0.5
+  _playerFireCooldown: 0.33333334
+  _bulletSpeed: 25
+  _speedCoefficient: 10

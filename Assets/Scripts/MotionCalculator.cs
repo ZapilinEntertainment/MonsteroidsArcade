@@ -8,18 +8,21 @@ namespace MonsteroidsArcade {
     {       
         // Рассчитывает передвижение и коллизию всех объектов.
         [SerializeField] private float _simulationTick = 1f / 120f;
-        private BitArray _presentedObjectsMask;
-        private bool _prepared = false, _isPaused = false, _needToClear = false;
+        private BitArray _presentedObjectsMask = new BitArray((int)CalculatingType.Total, false);
+        private bool _prepared = false, _isPaused = false, _needToClear = false, _waitForNewAsteroids = false;
         private SpaceObjectType _asteroidsMask;
-        private float _screenWidth, _screenHeight;
+        private float _screenWidth, _screenHeight, _canvasScale;
         private GameManager _gameManager;
         private PlayerController _playerController;
         private UFO _ufo;
         private Transform _playerTransform, _ufoTransform;
-        private Dictionary<SpaceObject, Transform> _asteroidsList, _playerBulletsList, _ufoBulletsList;      
+
+        private Dictionary<SpaceObject, Transform> _asteroidsList, _playerBulletsList, _ufoBulletsList; 
+       
         private HashSet<SpaceObject> _playerBulletsClearList, _asteroidsClearList; // список для очищения. Hashset так как не допускает повторений и порядок неважен 
         private PoolManager _poolManager;
         private GameSettings _gameSettings;
+        private System.Action<float> _canvasScaleUpdateEvent;
         public void Prepare(GameManager gm, PlayerController pc)
         {
             _gameManager = gm;
@@ -29,6 +32,7 @@ namespace MonsteroidsArcade {
 
             _playerController = pc;
             _playerTransform = pc.transform;
+            _canvasScaleUpdateEvent += pc.ChangeCanvasScale;           
             Time.fixedDeltaTime = _simulationTick;            
             //
             _asteroidsMask = SpaceObjectType.SmallAsteroid | SpaceObjectType.MediumAsteroid | SpaceObjectType.BigAsteroid;
@@ -36,7 +40,7 @@ namespace MonsteroidsArcade {
             _asteroidsList = new Dictionary<SpaceObject, Transform>();
             _playerBulletsList = new Dictionary<SpaceObject, Transform>();
             _ufoBulletsList = new Dictionary<SpaceObject, Transform>();
-            _presentedObjectsMask = new BitArray((int)CalculatingType.Total, false);
+
             _playerBulletsClearList = new HashSet<SpaceObject>();
             _asteroidsClearList = new HashSet<SpaceObject>();
             //           
@@ -48,53 +52,13 @@ namespace MonsteroidsArcade {
             //
             _prepared = true;
         }
-        
-        public void AddObjectToSimulation(SpaceObject so)
+
+        private void Start()
         {
-            var type = so.ObjectType;
-            if ((type & _asteroidsMask) != 0) _asteroidsList.Add(so, so.transform);
-            else
-            {
-                if (type == SpaceObjectType.PlayerBullet)
-                {
-                    _playerBulletsList.Add(so, so.transform); 
-                }
-                else
-                {
-                    if (type == SpaceObjectType.UFOBullet)
-                    {
-                        _playerBulletsList.Add(so, so.transform);
-                    }
-                    else Debug.Log("warning - wrong space object type tried to enlist");
-                }
-            }
+            _canvasScale = FindObjectOfType<Canvas>().scaleFactor;
+            if (_canvasScale != 1f) _canvasScaleUpdateEvent(_canvasScale);
         }
-        public void CreateObject(SpaceObjectType type, Vector3 position)
-        {
-            SpaceObject g = _poolManager.CreateObject(type, position); 
-            if ((type & _asteroidsMask) != 0)
-            {
-                _asteroidsList.Add(g, g.transform);
-                _presentedObjectsMask[(int)CalculatingType.Asteroids] = true;
-            }
-            else
-            {
-                if (type == SpaceObjectType.PlayerBullet)
-                {
-                    _playerBulletsList.Add(g, g.transform);
-                    _presentedObjectsMask[(int)CalculatingType.PlayerBullet] = true;
-                }
-                else
-                {
-                    if (type == SpaceObjectType.UFOBullet)
-                    {
-                        _ufoBulletsList.Add(g, g.transform);
-                        _presentedObjectsMask[(int)CalculatingType.UfoBullet] = true;
-                    } 
-                    // в ином случае будет вызван null
-                }
-            }
-        }
+
         public void CreateBigAsteroids(int count)
         {
             float pc = 1f / count, x,
@@ -134,10 +98,30 @@ namespace MonsteroidsArcade {
 
                 position = new Vector3(Random.value * _screenWidth, Random.value * _screenHeight, 0f);
                 so = _poolManager.CreateObject(SpaceObjectType.BigAsteroid, position);
-                so.SetMoveVector((Quaternion.Euler(0f, 0f, Random.value * 360f) * Vector3.up) * _gameSettings.GetObjectSpeed(SpaceObjectType.BigAsteroid));
+                so.SetMoveVector((Quaternion.Euler(0f, 0f, Random.value * 360f) * Vector3.up) * _gameSettings.GetObjectSpeed(SpaceObjectType.BigAsteroid));                
                 _asteroidsList.Add(so, so.transform);
+                _canvasScaleUpdateEvent += so.ChangeCanvasScale;
+                if (_canvasScale != 1f) so.ChangeCanvasScale(_canvasScale);
             }
             _presentedObjectsMask[(int)CalculatingType.Asteroids] = true;
+            _waitForNewAsteroids = false;
+        }
+        public void CreateBullet(Vector3 pos, Vector3 dir, bool playersBullet)
+        {
+            var so = _poolManager.CreateObject(playersBullet ? SpaceObjectType.PlayerBullet : SpaceObjectType.UFOBullet, pos);
+            so.SetMoveVector(dir);
+            _canvasScaleUpdateEvent += so.ChangeCanvasScale;
+            if (_canvasScale != 1f) so.ChangeCanvasScale(_canvasScale);
+            if (playersBullet)
+            {
+                _playerBulletsList.Add(so, so.transform);
+                _presentedObjectsMask[(int)CalculatingType.PlayerBullet] = true;
+            }
+            else
+            {
+                _ufoBulletsList.Add(so, so.transform);
+                _presentedObjectsMask[(int)CalculatingType.UfoBullet] = true;
+            }
         }
 
         private void FixedUpdate()
@@ -163,7 +147,8 @@ namespace MonsteroidsArcade {
                     foreach (var a in _playerBulletsList)
                     {
                         t = a.Value;
-                        t.position = t.position + a.Key.MoveVector * _simulationTick;
+                        pos0 = t.position + a.Key.MoveVector * _simulationTick;
+                        t.position = CheckPosition(pos0);
                     }
                 }
                 //
@@ -172,7 +157,8 @@ namespace MonsteroidsArcade {
                     foreach (var a in _ufoBulletsList)
                     {
                         t = a.Value;
-                        t.position = t.position + a.Key.MoveVector * _simulationTick;
+                        pos0 = t.position + a.Key.MoveVector * _simulationTick;
+                        t.position = CheckPosition(pos0);
                     }
                 }
                 //
@@ -208,7 +194,7 @@ namespace MonsteroidsArcade {
 
                     if (ObjectsPresented(CalculatingType.UfoBullet))
                     {
-                        if (IsColliding(_ufoBulletsList, ref so))
+                        if (IsColliding(_ufoBulletsList, out so))
                         {
                             _checkFurther = false;
                             DestroyPlayer();
@@ -217,7 +203,7 @@ namespace MonsteroidsArcade {
                     }
                     if (_checkFurther && ObjectsPresented(CalculatingType.Asteroids))
                     {
-                        if (IsColliding(_asteroidsList, ref so))
+                        if (IsColliding(_asteroidsList, out so))
                         {
                             DestroyPlayer();
                             DestroyAsteroid(so);
@@ -231,7 +217,7 @@ namespace MonsteroidsArcade {
 
                     if (ObjectsPresented(CalculatingType.PlayerBullet))
                     {
-                        if (IsColliding(_playerBulletsList, ref so))
+                        if (IsColliding(_playerBulletsList, out so))
                         {
                             _checkFurther = false;
                             DestroyUFO();
@@ -240,7 +226,7 @@ namespace MonsteroidsArcade {
                     }
                     if (_checkFurther && ObjectsPresented(CalculatingType.Asteroids))
                     {
-                        if (IsColliding(_asteroidsList, ref so))
+                        if (IsColliding(_asteroidsList, out so))
                         {
                             DestroyUFO();
                             //DestroyAsteroid(so); - в тз не указано
@@ -248,19 +234,30 @@ namespace MonsteroidsArcade {
                     }
                 }
                 _needToClear = false;
-                if (ObjectsPresented(CalculatingType.PlayerBullet) && ObjectsPresented(CalculatingType.Asteroids))
+                if (ObjectsPresented(CalculatingType.Asteroids))
                 {
-                    foreach (var a in _playerBulletsList)
+                    if (ObjectsPresented(CalculatingType.PlayerBullet))
                     {
-                        r0 = a.Key.Radius;
-                        pos0 = a.Value.position;
-                        if (IsColliding(_asteroidsList, ref so))
+                        foreach (var a in _playerBulletsList)
                         {
-                            _playerBulletsClearList.Add(a.Key);
-                            _asteroidsClearList.Add(so);
-                            _needToClear = true;
-                            continue;
+                            r0 = a.Key.Radius;
+                            pos0 = a.Value.position;
+                            SpaceObject hitSO;
+                            if (IsColliding(_asteroidsList, out hitSO))
+                            {
+                                _playerBulletsClearList.Add(a.Key);
+                                _asteroidsClearList.Add(hitSO);
+                                _needToClear = true;
+                            }
                         }
+                    }
+                }
+                else
+                {
+                    if (!_waitForNewAsteroids)
+                    {
+                        _waitForNewAsteroids = true;
+                        _gameManager.NextRound();
                     }
                 }
                 if (_needToClear)
@@ -273,7 +270,7 @@ namespace MonsteroidsArcade {
                     {
                         DestroyAsteroid(a);
                     }
-                    _playerBulletsList.Clear();
+                    _playerBulletsClearList.Clear();
                     _asteroidsClearList.Clear();
                 }
                 //
@@ -281,7 +278,7 @@ namespace MonsteroidsArcade {
 
                
 
-                bool IsColliding(in Dictionary<SpaceObject, Transform> list, ref SpaceObject _hitObject)
+                bool IsColliding(in Dictionary<SpaceObject, Transform> list, out SpaceObject _hitObject)
                 {
                     foreach (var so in list)
                     {
@@ -295,6 +292,7 @@ namespace MonsteroidsArcade {
                             return true;
                         }
                     }
+                    _hitObject = null;
                     return false;
                 }
 
@@ -322,34 +320,40 @@ namespace MonsteroidsArcade {
                 }
             }
         }
-
-        private void DestroyUfoBullet(in SpaceObject so)
+        private void Update()
+        {
+            float sh = Screen.height, sw = Screen.width;
+            if (sh != _screenHeight || sw != _screenWidth)
+            {
+                _screenHeight = sh;
+                _screenWidth = sw;
+                StartCoroutine(WaitForCanvasScaleChange());
+            }
+        }
+        IEnumerator WaitForCanvasScaleChange()
+        {
+            yield return 0.25f;
+            _canvasScale = FindObjectOfType<Canvas>().scaleFactor;
+            _canvasScaleUpdateEvent(_canvasScale);
+        }
+        public void DestroyUfoBullet(in SpaceObject so)
         {
             so.MakeDestroyed();
             _ufoBulletsList.Remove(so);
             _presentedObjectsMask[(int)CalculatingType.UfoBullet] = _ufoBulletsList.Count != 0;
             _poolManager.ReturnToPool(so);
         }
-        private void DestroyPlayerBullet(SpaceObject so)
+        public void DestroyPlayerBullet(in SpaceObject so)
         {
             so.MakeDestroyed();
             _playerBulletsList.Remove(so);
             _presentedObjectsMask[(int)CalculatingType.PlayerBullet] = _playerBulletsList.Count != 0;
             _poolManager.ReturnToPool(so);
         }
-        public void DestroyBullet(Bullet b)
-        {
-            if (b.ObjectType == SpaceObjectType.PlayerBullet)
-            {
-                DestroyPlayerBullet(b);
-            }
-            else DestroyUfoBullet(b);
-        }
 
         public void SetPause(bool x)
         {
             _isPaused = x;
         }
-                
     }
 }

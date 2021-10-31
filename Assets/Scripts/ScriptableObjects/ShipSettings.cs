@@ -11,11 +11,13 @@ namespace MonsteroidsArcade
         
         // #settings настройки управления
 
-        [SerializeField] private float _maxSpeed = 5f, _rotationSpeed = 35f, _acceleration = 1f, _keyboardRotationSpeed = 90f; 
+        [SerializeField] private float _maxSpeed = 5f, _rotationSpeed = 35f, _acceleration = 1f, 
+            _keyboardRotationSpeed = 90f, _invincibilityFlickeringTime = 0.5f; 
 
         public float MaxSpeed => _maxSpeed;
         public float RotationSpeed => _rotationSpeed;
         public float Acceleration => _acceleration;
         public float KeyboardControlsSensivity => _keyboardRotationSpeed;
+        public float InvincibilityFlickeringTime => _invincibilityFlickeringTime;
     }
 }

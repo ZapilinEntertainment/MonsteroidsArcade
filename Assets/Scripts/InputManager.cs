@@ -6,7 +6,6 @@ namespace MonsteroidsArcade
 {
     public sealed class InputManager : MonoBehaviour,IPausable
     {
-        [SerializeField] private RectTransform _testObject;
         private GameManager _gameManager;
         private PlayerController _playerController;
         private Vector3 _lastMousePosition;
@@ -59,7 +58,6 @@ namespace MonsteroidsArcade
                             {
                                 _playerController.RotateToPoint(mpos);
                                 _lastMousePosition = mpos;
-                                _testObject.position = _lastMousePosition;
                             }
                         }
                         if (newAcceleratingVal != _accelerating)

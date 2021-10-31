@@ -1,11 +1,14 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace MonsteroidsArcade
 {
     public sealed class Bullet : SpaceObject
     {
+        [SerializeField] private Image _sprite;
+        private bool _playersBullet = true;
         private float _distanceTravelled;
         private Vector3 _lastPos;
         private static float MAX_DISTANCE_SQR = 512f;
@@ -28,13 +31,32 @@ namespace MonsteroidsArcade
             Vector3 p = transform.position;
             _distanceTravelled += (p - _lastPos).sqrMagnitude;
             _lastPos = p;
-            if (_distanceTravelled >= MAX_DISTANCE_SQR) _motionCalculator.DestroyBullet(this);
+            if (_distanceTravelled >= MAX_DISTANCE_SQR)
+            {
+                if (_playersBullet) _motionCalculator.DestroyPlayerBullet(this);
+                else _motionCalculator.DestroyUfoBullet(this);
+            }
         }
 
         public override void SetMoveVector(Vector3 v)
         {
             base.SetMoveVector(v);
             _lastPos = transform.position;
+        }
+
+        public void ChangeOwner(bool playerBullet)
+        {
+            _playersBullet = playerBullet;
+            if (_playersBullet)
+            {
+                _sprite.color = GameConstants.PlayerBulletColor;
+                _type = SpaceObjectType.PlayerBullet;
+            }
+            else
+            {
+                _sprite.color = GameConstants.PlayerBulletColor;
+                _type = SpaceObjectType.UFOBullet;
+            }
         }
     }
 }

@@ -17,7 +17,9 @@ namespace MonsteroidsArcade
         public GameSettings GameSettings => _gameSettings;
         private MainMenuUI _mainMenuUI;
         private Action<bool> _pauseEvent;
-        private bool _gameStarted = false, _isPaused = true;
+        private bool _gameStarted = false, _isPaused = true,_waitForNextRound = false, _gameOver = false;
+        private int _asteroidsCount = 2;
+        private float _nextRoundTimer;
         public bool IsPaused => _isPaused;
 
         private void Awake()
@@ -50,10 +52,11 @@ namespace MonsteroidsArcade
                 return;
             }
             PlayerController.Prepare(this);
-            // Space objects simulator
+            //
             MotionCalculator = GetComponent<MotionCalculator>();
             if (MotionCalculator == null) MotionCalculator = gameObject.AddComponent<MotionCalculator>();
             MotionCalculator.Prepare(this, PlayerController);
+            PlayerController.AssignMotionCalculator(MotionCalculator);
             //
             _mainMenuUI.ActivateWindow(false);
         }
@@ -70,15 +73,47 @@ namespace MonsteroidsArcade
             {
                 PlayerController.Spawn();
                 _gameStarted = true;
+                _gameOver = false;
+                _waitForNextRound = false;
                 _isPaused = false;
                 _pauseEvent(false);
                 //
-                MotionCalculator.CreateBigAsteroids(2);
+                _asteroidsCount = _gameSettings.StartAsteroidsCount;
+                MotionCalculator.CreateBigAsteroids(_asteroidsCount);
+            }
+        }
+
+        private void Update()
+        {
+            if (!IsPaused)
+            {
+                if (_waitForNextRound)
+                {
+                    _nextRoundTimer -= Time.deltaTime;
+                    if (_nextRoundTimer <= 0f)
+                    {
+                        if (!_gameOver)
+                        {
+                            _asteroidsCount += _gameSettings.AsteroidsPerLevelSurplus;
+                            MotionCalculator.CreateBigAsteroids(_asteroidsCount);                           
+                        }
+                        _waitForNextRound = false;
+                    }
+                }
+            }
+        }
+        public void NextRound()
+        {
+            if (!_waitForNextRound)
+            {
+                _waitForNextRound = true;
+                _nextRoundTimer = _gameSettings.NextRoundDelay;
             }
         }
 
         public void GameOver()
         {
+            _gameOver = true;
             Debug.Log("game over");
         }
 

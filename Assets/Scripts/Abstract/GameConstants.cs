@@ -5,6 +5,7 @@ namespace MonsteroidsArcade
     {
         // #settings системные настройки
         private const string CONTROLS_CONFIG_KEY = "controlByKeyboardOnly";
+        public static readonly Color PlayerBulletColor = Color.green, UfoBulletColor = Color.red;
 
         public static bool IsControlKeyboardOnly()
         {

@@ -8,6 +8,7 @@ namespace MonsteroidsArcade
     {
         private Dictionary<SpaceObjectType, PoolCell> _pools;
         private Transform _objectsHost;
+        private readonly SpaceObjectType _bulletsMask = SpaceObjectType.PlayerBullet | SpaceObjectType.UFOBullet;
         public override bool Equals(object obj)
         {
             // Check for null values and compare run-time types.
@@ -30,13 +31,14 @@ namespace MonsteroidsArcade
         }
         public PoolManager(Transform i_objectsHost)
         {
+            PoolCell bulletCell = new PoolCell("bullet");
             _pools = new Dictionary<SpaceObjectType, PoolCell>()
             {
                 { SpaceObjectType.SmallAsteroid, new PoolCell("smallAsteroid")},
                 { SpaceObjectType.MediumAsteroid, new PoolCell("mediumAsteroid")},
                 { SpaceObjectType.BigAsteroid, new PoolCell("bigAsteroid")},
-                { SpaceObjectType.PlayerBullet, new PoolCell("playerBullet")},
-                { SpaceObjectType.UFOBullet, new PoolCell("ufoBullet")}
+                { SpaceObjectType.PlayerBullet, bulletCell},
+                { SpaceObjectType.UFOBullet, bulletCell}
             };
             _objectsHost = i_objectsHost;
         }
@@ -45,7 +47,13 @@ namespace MonsteroidsArcade
         {
             if (_pools.ContainsKey(type))
             {
-                return _pools[type].Instantiate(_objectsHost, position);
+                if ((type & _bulletsMask) == 0)  return _pools[type].Instantiate(_objectsHost, position);
+                else
+                {
+                    var b = _pools[type].Instantiate(_objectsHost, position);
+                    (b as Bullet).ChangeOwner(type == SpaceObjectType.PlayerBullet);
+                    return b;
+                }
             }
             else
             {
@@ -90,10 +98,10 @@ namespace MonsteroidsArcade
             }      
             
             public void ReturnToPool(SpaceObject so)
-            {
-                _pool.Push(so);
+            {                
                 so.Stop();
                 so.gameObject.SetActive(false);
+                _pool.Push(so);
             }
         }
     }

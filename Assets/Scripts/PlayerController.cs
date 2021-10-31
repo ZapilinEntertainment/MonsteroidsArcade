@@ -1,26 +1,29 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace MonsteroidsArcade
 {
     public sealed class PlayerController : SpaceObject, IPausable
     {
         [SerializeField] private ShipSettings _shipSettings;
-        [SerializeField] private Transform _sprite;
+        [SerializeField] private Transform _model;
         public bool IsInvincible { get; private set; }
         public bool IsDestroyed { get; private set; }
         public int LivesCount { get; private set; }
         private GameManager _gameManager;
+        private MotionCalculator _motionCalculator;
         private Quaternion _rotation, _targetRotation;
         private InputManager _inputManager;
         private GameSettings _gameSettings;
+        private Image _modelSprite;
         private bool _isPaused, _accelerate, _isRespawning;
-        private float _stateChangeTimer = 0f;
+        private float _stateChangeTimer = 0f, _flickerStartTime = 0f, _fireCooldownTimer = 0f;
 
         public void Prepare(GameManager gm)
         {
-            _gameManager = gm;
+            _gameManager = gm;            
             _isPaused = _gameManager.IsPaused;
             _gameManager.SubscribeToPauseEvent(this);
             _gameSettings = _gameManager.GameSettings;
@@ -33,18 +36,26 @@ namespace MonsteroidsArcade
             _inputManager = gameObject.GetComponent<InputManager>();
             if (_inputManager == null) _inputManager = gameObject.AddComponent<InputManager>();
             _inputManager.Prepare(_gameManager, this);
+            //
+            _modelSprite = _model.GetComponent<Image>();
         }
+        public void AssignMotionCalculator(MotionCalculator mc)
+        {
+            _motionCalculator = mc;
+        }
+
 
         public void Spawn()
         {
             Stop();
             transform.position = new Vector3(Screen.width / 2f, Screen.height / 2f, 0f);
             _rotation = Quaternion.identity;
-            _sprite.rotation = _rotation;
+            _model.rotation = _rotation;
             transform.rotation = _rotation;
             _targetRotation = _rotation;
             _stateChangeTimer = _gameManager.GameSettings.StartInvincibilityTime;
             IsInvincible = true;
+            _fireCooldownTimer = 0f;
         }
 
         private void Update()
@@ -56,12 +67,12 @@ namespace MonsteroidsArcade
                 if (_rotation != _targetRotation)
                 {
                     _rotation = Quaternion.RotateTowards(_rotation, _targetRotation, _shipSettings.RotationSpeed * t);
-                    _sprite.rotation = _rotation;
+                    _model.rotation = _rotation;
                 }
                 if (_accelerate)
                 {
-                    MoveVector = Vector3.MoveTowards(MoveVector, (_rotation * Vector3.up) * _shipSettings.MaxSpeed, _shipSettings.Acceleration * t);
-                    MoveVector = (_rotation * Vector3.up) * _shipSettings.MaxSpeed;
+                    _moveVector = Vector3.MoveTowards(_moveVector, (_rotation * Vector3.up) * _shipSettings.MaxSpeed, _shipSettings.Acceleration * t);
+                    //_moveVector = (_rotation * Vector3.up) * _shipSettings.MaxSpeed;
                 }
                 if (IsInvincible)
                 {
@@ -70,8 +81,18 @@ namespace MonsteroidsArcade
                     {
                         _stateChangeTimer = 0f;
                         IsInvincible = false;
+                        _modelSprite.color = Color.white;
+                    }
+                    else
+                    {
+                        _modelSprite.color = new Color(1f, 1f, 1f, 1f - Mathf.PingPong((Time.time - _flickerStartTime) / _shipSettings.InvincibilityFlickeringTime, 1f));
                     }
                 }
+                if (_fireCooldownTimer > 0f)
+                {
+                    _fireCooldownTimer -= t;
+                    if (_fireCooldownTimer < 0f) _fireCooldownTimer = 0f;
+                } 
             }
             else
             {
@@ -82,17 +103,26 @@ namespace MonsteroidsArcade
                     {
                         _stateChangeTimer = _gameSettings.StartInvincibilityTime;
                         IsInvincible = true;
+                        _flickerStartTime = Time.time;
                         IsDestroyed = false;
                         _isRespawning = false;
-                        _sprite.gameObject.SetActive(true); // + effect
+                        _model.gameObject.SetActive(true); // + effect
                     }
+                    
                 }
             }
         }
 
         public void Fire()
         {
-            if (!_isPaused) return;
+
+            if (_isPaused || _fireCooldownTimer != 0f) return;
+            else
+            {
+                Vector3 d = _rotation * Vector3.up;
+                _motionCalculator.CreateBullet(transform.position + d * Radius, d * _gameSettings.BulletSpeed, true);
+                _fireCooldownTimer = _gameSettings.PlayerFireCooldown;
+            }
         }
         public void RotateToPoint(Vector3 point)
         {
@@ -122,7 +152,7 @@ namespace MonsteroidsArcade
             IsDestroyed = true;
             Stop();
             LivesCount--;
-            _sprite.gameObject.SetActive(false);
+            _model.gameObject.SetActive(false);
             if (LivesCount <= 0)
             {
                 _gameManager.GameOver();
