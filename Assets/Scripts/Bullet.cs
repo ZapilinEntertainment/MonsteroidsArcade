@@ -54,7 +54,7 @@ namespace MonsteroidsArcade
             }
             else
             {
-                _sprite.color = GameConstants.PlayerBulletColor;
+                _sprite.color = GameConstants.UfoBulletColor;
                 _type = SpaceObjectType.UFOBullet;
             }
         }

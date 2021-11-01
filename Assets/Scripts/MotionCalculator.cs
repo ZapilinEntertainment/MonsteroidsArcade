@@ -22,7 +22,7 @@ namespace MonsteroidsArcade {
         private HashSet<SpaceObject> _playerBulletsClearList, _asteroidsClearList; // список для очищения. Hashset так как не допускает повторений и порядок неважен 
         private List<(Vector3 pos, Vector3 dir, bool mediumSize)> _asteroidsCreateList;
         
-        private PoolManager _poolManager;
+        private ObjectsManager _poolManager;
         private GameSettings _gameSettings;
         private System.Action<float> _canvasScaleUpdateEvent;
         public void Prepare(GameManager gm, PlayerController pc)
@@ -47,7 +47,7 @@ namespace MonsteroidsArcade {
             _asteroidsClearList = new HashSet<SpaceObject>();
             _asteroidsCreateList = new List<(Vector3, Vector3, bool)>();
             //           
-            _poolManager = new PoolManager(_gameManager.GameZoneHost);
+            _poolManager = new ObjectsManager(_gameManager.GameZoneHost);
             //
             _screenWidth = Screen.width;
             _screenHeight = Screen.height;
@@ -133,6 +133,40 @@ namespace MonsteroidsArcade {
             _canvasScaleUpdateEvent += so.ChangeCanvasScale;
             if (_canvasScale != 1f) so.ChangeCanvasScale(_canvasScale);
             _presentedObjectsMask[(int)type.DefineCalculatingType()] = hostlist.Count != 0;
+        }
+        
+        public UFO LaunchUFO()
+        {
+            const float BORDER = 0.2f;
+            float height = (BORDER + Random.value * (1f - 2f * BORDER)) * _screenHeight;
+            Vector3 position, direction;
+            if (Random.value > 0.5f)
+            {
+                position = new Vector3(0f, height, 0f);
+                direction = Vector3.right;
+            }
+            else
+            {
+                position = new Vector3(_screenWidth, height, 0f);
+                direction = Vector3.left;
+            }
+            
+            if (_ufo == null)
+            {
+                _ufo = _poolManager.CreateObject(SpaceObjectType.UFO, position) as UFO;
+                _ufo.AssignLinks(_gameSettings, this, _playerTransform);
+                _ufoTransform = _ufo.transform;                
+                _canvasScaleUpdateEvent += _ufo.ChangeCanvasScale; 
+            }
+            else
+            {
+                _ufoTransform.position = position;
+                _ufo.gameObject.SetActive(true);
+            }
+            _ufo.SetMoveVector(direction * _gameSettings.GetObjectSpeed(SpaceObjectType.UFO));
+
+            _presentedObjectsMask[(int)CalculatingType.UFO] = true;
+            return _ufo;
         }
         #endregion
 
@@ -338,12 +372,12 @@ namespace MonsteroidsArcade {
                 }
                 void DestroyUFO()
                 {
-                    _ufo.MakeDestroyed();
+                    _ufo.gameObject.SetActive(false);
                     _presentedObjectsMask[(int)CalculatingType.UFO] = false;
+                    _gameManager.UfoDestroyed();
                 }                
                 void DestroyAsteroid(in SpaceObject so)
                 {
-                    so.MakeDestroyed();
                     _asteroidsList.Remove(so);
                     _presentedObjectsMask[(int)CalculatingType.Asteroids] = _asteroidsList.Count != 0;
                     _poolManager.ReturnToPool(so);
@@ -373,14 +407,12 @@ namespace MonsteroidsArcade {
         }
         public void DestroyUfoBullet(in SpaceObject so)
         {
-            so.MakeDestroyed();
             _ufoBulletsList.Remove(so);
             _presentedObjectsMask[(int)CalculatingType.UfoBullet] = _ufoBulletsList.Count != 0;
             _poolManager.ReturnToPool(so);
         }
         public void DestroyPlayerBullet(in SpaceObject so)
         {
-            so.MakeDestroyed();
             _playerBulletsList.Remove(so);
             _presentedObjectsMask[(int)CalculatingType.PlayerBullet] = _playerBulletsList.Count != 0;
             _poolManager.ReturnToPool(so);

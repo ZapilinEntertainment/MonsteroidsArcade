@@ -4,11 +4,12 @@ using UnityEngine;
 
 namespace MonsteroidsArcade
 {
-    public sealed class PoolManager
+    public sealed class ObjectsManager
     {
         private Dictionary<SpaceObjectType, PoolCell> _pools;
         private Transform _objectsHost;
         private readonly SpaceObjectType _bulletsMask = SpaceObjectType.PlayerBullet | SpaceObjectType.UFOBullet;
+        private const string PREFABS_PATH = "Prefabs/";
         public override bool Equals(object obj)
         {
             // Check for null values and compare run-time types.
@@ -17,7 +18,7 @@ namespace MonsteroidsArcade
 
             else return true;
         }
-        public static bool operator ==(PoolManager A, PoolManager B)
+        public static bool operator ==(ObjectsManager A, ObjectsManager B)
         {
             if (ReferenceEquals(A, null))
             {
@@ -25,18 +26,18 @@ namespace MonsteroidsArcade
             }
             return A.Equals(B);
         }
-        public static bool operator !=(PoolManager A, PoolManager B)
+        public static bool operator !=(ObjectsManager A, ObjectsManager B)
         {
             return !(A == B);
         }
-        public PoolManager(Transform i_objectsHost)
+        public ObjectsManager(Transform i_objectsHost)
         {
-            PoolCell bulletCell = new PoolCell("bullet");
+            PoolCell bulletCell = new PoolCell(PREFABS_PATH + "bullet");
             _pools = new Dictionary<SpaceObjectType, PoolCell>()
             {
-                { SpaceObjectType.SmallAsteroid, new PoolCell("smallAsteroid")},
-                { SpaceObjectType.MediumAsteroid, new PoolCell("mediumAsteroid")},
-                { SpaceObjectType.BigAsteroid, new PoolCell("bigAsteroid")},
+                { SpaceObjectType.SmallAsteroid, new PoolCell(PREFABS_PATH + "smallAsteroid")},
+                { SpaceObjectType.MediumAsteroid, new PoolCell(PREFABS_PATH + "mediumAsteroid")},
+                { SpaceObjectType.BigAsteroid, new PoolCell(PREFABS_PATH + "bigAsteroid")},
                 { SpaceObjectType.PlayerBullet, bulletCell},
                 { SpaceObjectType.UFOBullet, bulletCell}
             };
@@ -57,8 +58,18 @@ namespace MonsteroidsArcade
             }
             else
             {
-                Debug.Log("warning - wrong pool master call");
-                return null;
+                if (type == SpaceObjectType.UFO)
+                {
+                    UFO ufo = Object.Instantiate(
+                        Resources.Load<GameObject>(PREFABS_PATH + "ufo"), position, Quaternion.identity,_objectsHost
+                        ).GetComponent<UFO>();
+                    return ufo;
+                }
+                else
+                {
+                    Debug.Log("warning - wrong pool master call");
+                    return null;
+                }
             }
         }
 
@@ -75,13 +86,12 @@ namespace MonsteroidsArcade
         {
             private Stack<SpaceObject> _pool;
             private GameObject _prefabLink;
-            private bool _isEmpty { get { return _pool.Count == 0; } }
-            private const string RESOURCES_PATH = "Prefabs/";
+            private bool _isEmpty { get { return _pool.Count == 0; } }          
 
 
-            public PoolCell(string name)
+            public PoolCell(string path)
             {
-                _prefabLink = Resources.Load<GameObject>(RESOURCES_PATH + name);
+                _prefabLink = Resources.Load<GameObject>(path);
                 _pool = new Stack<SpaceObject>();
             }
 

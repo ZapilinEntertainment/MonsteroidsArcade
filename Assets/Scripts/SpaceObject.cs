@@ -27,10 +27,10 @@ namespace MonsteroidsArcade
     {
         [SerializeField] protected SpaceObjectType _type;
         [SerializeField] private float _radius = 1f;
-        private float _canvasScale = 1f;
+        protected float _canvasScale = 1f;
         public SpaceObjectType ObjectType => _type;
 
-        public Vector3 MoveVector => _moveVector * _canvasScale;
+        virtual public Vector3 MoveVector => _moveVector * _canvasScale;
         protected Vector3 _moveVector;
         public float Radius => _radius * _canvasScale;
 
@@ -39,8 +39,6 @@ namespace MonsteroidsArcade
         {
             Gizmos.DrawWireSphere(transform.position, Radius);
         }
-
-        virtual public void MakeDestroyed() { }
         virtual public void Stop()
         {
             _moveVector = Vector3.zero;
@@ -50,7 +48,7 @@ namespace MonsteroidsArcade
             _moveVector = v;
         }
 
-        public void ChangeCanvasScale(float x)
+        virtual public void ChangeCanvasScale(float x)
         {
             _canvasScale = x;
         }

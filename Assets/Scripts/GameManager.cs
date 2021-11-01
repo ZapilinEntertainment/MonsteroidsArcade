@@ -17,9 +17,10 @@ namespace MonsteroidsArcade
         public GameSettings GameSettings => _gameSettings;
         private MainMenuUI _mainMenuUI;
         private Action<bool> _pauseEvent;
-        private bool _gameStarted = false, _isPaused = true,_waitForNextRound = false, _gameOver = false;
+        private UFO _ufo;
+        private bool _gameStarted = false, _isPaused = true,_waitForNextRound = false, _gameOver = false, _ufoLaunched = false;
         private int _asteroidsCount = 2;
-        private float _nextRoundTimer;
+        private float _nextRoundTimer, _ufoTimer;
         public bool IsPaused => _isPaused;
 
         private void Awake()
@@ -80,16 +81,19 @@ namespace MonsteroidsArcade
                 //
                 _asteroidsCount = _gameSettings.StartAsteroidsCount;
                 MotionCalculator.CreateBigAsteroids(_asteroidsCount);
+                _ufoTimer = _gameSettings.GetUfoTime();
+                _ufoLaunched = false;
             }
         }
 
         private void Update()
         {
-            if (!IsPaused)
+            if (!IsPaused & !_gameOver)
             {
+                float t = Time.deltaTime;
                 if (_waitForNextRound)
                 {
-                    _nextRoundTimer -= Time.deltaTime;
+                    _nextRoundTimer -= t;
                     if (_nextRoundTimer <= 0f)
                     {
                         if (!_gameOver)
@@ -100,14 +104,32 @@ namespace MonsteroidsArcade
                         _waitForNextRound = false;
                     }
                 }
+                if (!_ufoLaunched)
+                {
+                    _ufoTimer -= t;
+                    if (_ufoTimer <= 0f)
+                    {
+                        _ufo = MotionCalculator.LaunchUFO();
+                        _ufo.Activate();
+                        _ufoLaunched = true;
+                    }
+                }
             }
         }
         public void NextRound()
         {
-            if (!_waitForNextRound)
+            if (!_waitForNextRound & !_gameOver)
             {
                 _waitForNextRound = true;
                 _nextRoundTimer = _gameSettings.NextRoundDelay;
+            }
+        }
+        public void UfoDestroyed()
+        {
+            if (_ufoLaunched)
+            {
+                _ufoLaunched = false;
+                _ufoTimer = _gameSettings.GetUfoTime();
             }
         }
 

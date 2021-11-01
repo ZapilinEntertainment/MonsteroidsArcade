@@ -12,18 +12,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f5b45e4c2f33bda45b0562a73b65ebb9, type: 3}
   m_Name: GameSettings
   m_EditorClassIdentifier: 
-  _smallAsteroidMinSpeed: 5
-  _smallAsteroidMaxSpeed: 10
-  _mediumAsteroidMinSpeed: 3
-  _mediumAsteroidMaxSpeed: 6
-  _bigAsteroidMinSpeed: 1.5
-  _bigAsteroidMaxSpeed: 3
+  _smallAsteroidMinSpeed: 10
+  _smallAsteroidMaxSpeed: 15
+  _mediumAsteroidMinSpeed: 7
+  _mediumAsteroidMaxSpeed: 10
+  _bigAsteroidMinSpeed: 3
+  _bigAsteroidMaxSpeed: 6
   _playerLivesCount: 3
   _startAsteroidsCount: 2
   _asteroidsPerLevelSurplus: 2
   _startInvincibilityTime: 3
   _respawnDelay: 0.5
   _playerFireCooldown: 0.33333334
-  _bulletSpeed: 8
+  _bulletSpeed: 40
   _nextRoundDelay: 2
+  _ufoMinTime: 20
+  _ufoMaxTime: 40
+  _ufoFlightTime: 10
+  _ufoMinFireCooldown: 2
+  _ufoMaxFireColldown: 5
   _speedCoefficient: 10

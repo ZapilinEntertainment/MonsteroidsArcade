@@ -120,7 +120,7 @@ namespace MonsteroidsArcade
             else
             {
                 Vector3 d = _rotation * Vector3.up;
-                _motionCalculator.CreateBullet(transform.position + d * Radius, d * _gameSettings.BulletSpeed, true);
+                _motionCalculator.CreateBullet(transform.position + d * Radius, d, true);
                 _fireCooldownTimer = _gameSettings.PlayerFireCooldown;
             }
         }
@@ -147,7 +147,7 @@ namespace MonsteroidsArcade
             _accelerate = false;
         }
 
-        public override void MakeDestroyed()
+        public void MakeDestroyed()
         {
             IsDestroyed = true;
             Stop();

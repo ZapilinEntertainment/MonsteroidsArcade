@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _maxSpeed: 150
   _rotationSpeed: 260
-  _acceleration: 150
+  _acceleration: 250
   _keyboardRotationSpeed: 90
   _invincibilityFlickeringTime: 0.5
