@@ -33,6 +33,7 @@ namespace MonsteroidsArcade
         virtual public Vector3 MoveVector => _moveVector * _canvasScale;
         protected Vector3 _moveVector;
         public float Radius => _radius * _canvasScale;
+        public float RawRadius => _radius;
 
 
         private void OnDrawGizmos()

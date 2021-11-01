@@ -18,7 +18,7 @@ MonoBehaviour:
   _mediumAsteroidMaxSpeed: 10
   _bigAsteroidMinSpeed: 3
   _bigAsteroidMaxSpeed: 6
-  _playerLivesCount: 1
+  _playerLivesCount: 3
   _startAsteroidsCount: 2
   _asteroidsPerLevelSurplus: 2
   _startInvincibilityTime: 3

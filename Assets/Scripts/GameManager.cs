@@ -18,6 +18,7 @@ namespace MonsteroidsArcade
         public int Score { get; private set; }
 
         private UIManager _uiManager;
+        private Audiomaster _audiomaster;
 
         private Action<bool> _pauseEvent;
         private UFO _ufo;
@@ -64,7 +65,12 @@ namespace MonsteroidsArcade
             MotionCalculator.Prepare(this, PlayerController, GameZoneHost);
             PlayerController.AssignMotionCalculator(MotionCalculator);
             //
-            
+            _audiomaster = FindObjectOfType<Audiomaster>();
+            if (_audiomaster == null)
+            {
+                _audiomaster = new GameObject("Audiomaster").AddComponent<Audiomaster>();
+            }
+            _audiomaster.Prepare();
         }
 
         public void SubscribeToPauseEvent(IPausable ip)
@@ -75,23 +81,25 @@ namespace MonsteroidsArcade
 
         public void StartNewSession()
         {
-            if (!_gameStarted)
+            if (_gameStarted)
             {
-                PlayerController.Spawn(true);
-                _gameStarted = true;
-                _gameOver = false;
-                _waitForNextRound = false;
-                _isPaused = false;
-                _pauseEvent(false);
-                //
-                _asteroidsCount = _gameSettings.StartAsteroidsCount;
-                MotionCalculator.CreateBigAsteroids(_asteroidsCount);
-                _ufoTimer = _gameSettings.GetUfoTime();
-                _ufoLaunched = false;
-                Score = 0;
-                //
-                _uiManager.ChangeStatus(GameUIStatus.Playmode);
+                MotionCalculator.DestroyAllObjects();
+                _audiomaster.NewSessionStarted();
             }
+            PlayerController.Spawn(true);
+            _gameStarted = true;
+            _gameOver = false;
+            _waitForNextRound = false;
+            _isPaused = false;
+            _pauseEvent(false);
+            //
+            _asteroidsCount = _gameSettings.StartAsteroidsCount;
+            MotionCalculator.CreateBigAsteroids(_asteroidsCount);
+            _ufoTimer = _gameSettings.GetUfoTime();
+            _ufoLaunched = false;
+            Score = 0;
+            //
+            _uiManager.ChangeStatus(GameUIStatus.Playmode);
         }
 
         private void Update()
@@ -138,6 +146,7 @@ namespace MonsteroidsArcade
             {
                 _ufoLaunched = false;
                 _ufoTimer = _gameSettings.GetUfoTime();
+                Audiomaster.PlayEffect(AudioEffectType.UfoDefeated);
             }
         }
         public void AddScore(int val)
@@ -148,11 +157,14 @@ namespace MonsteroidsArcade
         public void GameOver()
         {
             _gameOver = true;
-            _uiManager.ChangeStatus(GameUIStatus.GameOver);
+            GameConstants.SetHighscore(Score);
+            Audiomaster.PlayEffect(AudioEffectType.GameOver);            
+            _uiManager.ChangeStatus(GameUIStatus.GameOver);            
         }
 
         public void PauseSwitch()
         {
+            Audiomaster.PlayEffect(AudioEffectType.ButtonClicked);
             _isPaused = !_isPaused;
             _pauseEvent(IsPaused);
             _uiManager.ChangeStatus(IsPaused? GameUIStatus.PauseWindow : GameUIStatus.Playmode);

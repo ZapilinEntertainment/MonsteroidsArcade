@@ -90,10 +90,17 @@ namespace MonsteroidsArcade
             else Debug.Log("warning - wrong type of pooling object");            
         }
 
+        public float GetObjectRawRadius(SpaceObjectType type)
+        {
+            if (_pools.ContainsKey(type)) return _pools[type].RawRadius;
+            else return 1f;
+        }
+
         private class PoolCell
         {
             private Stack<SpaceObject> _pool;
             private GameObject _prefabLink;
+            public float RawRadius => _prefabLink.GetComponent<SpaceObject>().RawRadius;
             private bool _isEmpty { get { return _pool.Count == 0; } }          
 
 

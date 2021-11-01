@@ -34,6 +34,7 @@ namespace MonsteroidsArcade
                     _shootTimer = _gameSettings.GetUfoFireCooldown();
                     Vector3 pos = transform.position;
                     _motionCalculator.CreateBullet(pos, (_playerTransform.position - pos).normalized, false);
+                    Audiomaster.PlayEffect(AudioEffectType.UfoShot);
                 }
             }
         }

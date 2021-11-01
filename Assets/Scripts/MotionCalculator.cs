@@ -65,43 +65,47 @@ namespace MonsteroidsArcade {
         #region objects creating
         public void CreateBigAsteroids(int count)
         {
-            float pc = 1f / count, x,
-                widthPart = _screenWidth / (_screenWidth + _screenHeight) * 0.5f,
-                heightPart = 0.5f - widthPart,
-                perimeter = 2f * _screenWidth + 2f * _screenHeight
-                ;
-            // делим периметр экрана на 4 неравноценные части
-            Vector3 position, direction;
+            float x, widthPart = _screenWidth / (_screenWidth + _screenHeight), 
+                r = _poolManager.GetObjectRawRadius(SpaceObjectType.BigAsteroid) * _canvasScale;
+            Vector3 position, direction, center = new Vector3(_screenWidth / 2f, _screenHeight / 2f, 0);
             SpaceObject so;
             for (int i = 0; i < count; i++)
             {
                 x = Random.value;
-                if (x > 0.5f)
+                if (x > widthPart)
                 {
-                    if (x < widthPart)
-                    { // нижняя граница экрана
-                        position = new Vector3(((i + x) * pc) * perimeter, 0f, 0f);
+                    //spawns at left & right sides
+                    x = (x - widthPart) / (1f - widthPart);
+                    if (x > 0.5f)
+                    {
+                        x = (x - 0.5f) / 0.5f;
+                        position = new Vector3(_screenWidth + r, _screenHeight * x, 0f);
+                        direction = Quaternion.Euler(0f, 0f, Random.value * 25f - 90f) * (center  -position).normalized;
                     }
                     else
-                    {// правая граница экрана
-                        position = new Vector3(_screenWidth, ((i + x) * pc - widthPart) * perimeter, 0f);
+                    {
+                        x /= 0.5f;
+                        position = new Vector3(-r, _screenHeight * x, 0f);
+                        direction = Quaternion.Euler(0f, 0f, Random.value * 25f - 90f) * (center - position).normalized;
                     }
                 }
                 else
                 {
-                    x -= 0.5f;
-                    if (x < widthPart)
-                    { // верхняя граница экрана
-                        position = new Vector3((1f - heightPart - (i + x) * pc) * perimeter, _screenHeight, 0f);
+                    //spawns at up & down sides
+                    x /= widthPart;
+                    if (x > 0.5f)
+                    {
+                        x = (x - 0.5f) / 0.5f;
+                        position = new Vector3(_screenWidth * x, _screenHeight + r, 0f);
+                        direction = Quaternion.Euler(0f, 0f, Random.value * 25f - 90f) * (center - position).normalized;
                     }
                     else
-                    { // левая граница экрана
-                        position = new Vector3(0f, (1f - (i + x) * pc) * perimeter, 0f);
+                    {
+                        x /= 0.5f;
+                        position = new Vector3(_screenWidth * x, -r, 0f);
+                        direction = Quaternion.Euler(0f, 0f, Random.value * 25f - 90f) * (center - position).normalized;
                     }
                 }
-
-                position = new Vector3(Random.value * _screenWidth, Random.value * _screenHeight, 0f);
-                direction = (Quaternion.Euler(0f, 0f, Random.value * 360f) * Vector3.up);
                 CreatePoolingObject_StandartSpeed(
                     SpaceObjectType.BigAsteroid,
                     position,
@@ -180,12 +184,12 @@ namespace MonsteroidsArcade {
                 _presentedObjectsMask[(int)CalculatingType.Player] = !_playerController.IsDestroyed;
                 if (ObjectsPresented(CalculatingType.Player))
                 {
-                    _playerTransform.position = CheckPosition(_playerTransform.position + _playerController.MoveVector * _simulationTick);
+                    _playerTransform.position = CheckPosition(_playerTransform.position + _playerController.MoveVector * _simulationTick, _playerController.Radius);
                 }
                 
                 if (ObjectsPresented(CalculatingType.UFO))
                 {
-                    _ufoTransform.position = CheckPosition(_ufoTransform.position + _ufo.MoveVector * _simulationTick);
+                    _ufoTransform.position = CheckPosition(_ufoTransform.position + _ufo.MoveVector * _simulationTick, _ufo.Radius);
                 }
                 //
                 if (ObjectsPresented(CalculatingType.PlayerBullet))
@@ -194,7 +198,7 @@ namespace MonsteroidsArcade {
                     {
                         t = a.Value;
                         pos0 = t.position + a.Key.MoveVector * _simulationTick;
-                        t.position = CheckPosition(pos0);
+                        t.position = CheckPosition(pos0, a.Key.Radius);
                     }
                 }
                 //
@@ -204,7 +208,7 @@ namespace MonsteroidsArcade {
                     {
                         t = a.Value;
                         pos0 = t.position + a.Key.MoveVector * _simulationTick;
-                        t.position = CheckPosition(pos0);
+                        t.position = CheckPosition(pos0, a.Key.Radius);
                     }
                 }
                 //
@@ -213,16 +217,17 @@ namespace MonsteroidsArcade {
                     foreach (var a in _asteroidsList)
                     {
                         t = a.Value;
-                        t.position = CheckPosition(t.position + a.Key.MoveVector * _simulationTick);
+                        t.position = CheckPosition(t.position + a.Key.MoveVector * _simulationTick,a.Key.Radius);
                     }
                 }               
 
-                Vector3 CheckPosition(Vector3 pos)
+                Vector3 CheckPosition(Vector3 pos, in float radius)
                 {
-                    if (pos.x < 0f) pos.x = _screenWidth + pos.x;
-                    else if (pos.x > _screenWidth) pos.x -= _screenWidth;
-                    if (pos.y < 0f) pos.y = _screenHeight + pos.y;
-                    else if (pos.y > _screenHeight) pos.y -= _screenHeight;
+                    float r2 = radius;
+                    if (pos.x < -r2) pos.x = _screenWidth + pos.x + r2 * 2f;
+                    else if (pos.x > _screenWidth + r2) pos.x -= (_screenWidth + 2f * r2);
+                    if (pos.y < -r2) pos.y = _screenHeight + pos.y + r2 * 2f;
+                    else if (pos.y > _screenHeight + r2) pos.y -= (_screenHeight + 2f * r2);
                     return pos;
                 }
                 // COLLISIONS
@@ -243,6 +248,7 @@ namespace MonsteroidsArcade {
                             _checkFurther = false;
                             DestroyPlayer();
                             DestroyUfoBullet(so);
+                            Audiomaster.PlayEffect(AudioEffectType.Blast);
                         }
                     }
                     if (_checkFurther && ObjectsPresented(CalculatingType.Asteroids))
@@ -251,6 +257,7 @@ namespace MonsteroidsArcade {
                         {
                             DestroyPlayer();
                             DestroyAsteroid(so);
+                            Audiomaster.PlayEffect(AudioEffectType.Blast);
                         }
                     }
                 }
@@ -266,6 +273,7 @@ namespace MonsteroidsArcade {
                             _checkFurther = false;
                             DestroyUFO();
                             DestroyPlayerBullet(so);
+                            Audiomaster.PlayEffect(AudioEffectType.Blast);
                         }
                     }
                     if (_checkFurther && ObjectsPresented(CalculatingType.Asteroids))
@@ -274,6 +282,7 @@ namespace MonsteroidsArcade {
                         {
                             DestroyUFO();
                             DestroyAsteroid(so);
+                            Audiomaster.PlayEffect(AudioEffectType.Blast);
                         }
                     }
                 }
@@ -305,6 +314,7 @@ namespace MonsteroidsArcade {
                                     }
                                     else score += _gameSettings.SmallAsteroidScore;
                                 }
+                                Audiomaster.PlayEffect(AudioEffectType.Blast);
                             }
                         }
                         if (score != 0) _gameManager.AddScore(score);
@@ -424,7 +434,7 @@ namespace MonsteroidsArcade {
 
         public void DestroyAllObjects()
         {
-            _playerController.gameObject.SetActive(false);
+            _playerController.Hide();
             if (_presentedObjectsMask[(int)CalculatingType.UFO])
             {
                 _ufo.Stop();

@@ -55,9 +55,10 @@ namespace MonsteroidsArcade
             _targetRotation = _rotation;
             _stateChangeTimer = _gameManager.GameSettings.StartInvincibilityTime;
             IsInvincible = true;
+            IsDestroyed = false;
             _fireCooldownTimer = 0f;
             if (resetLivesCounter) LivesCount = _gameSettings.PlayerLivesCount;
-            gameObject.SetActive(true);
+            _model.gameObject.SetActive(true);
         }
 
         private void Update()
@@ -118,12 +119,13 @@ namespace MonsteroidsArcade
         public void Fire()
         {
 
-            if (_isPaused || _fireCooldownTimer != 0f) return;
+            if (_isPaused || IsDestroyed || _fireCooldownTimer != 0f) return;
             else
             {
                 Vector3 d = _rotation * Vector3.up;
                 _motionCalculator.CreateBullet(transform.position + d * Radius, d, true);
                 _fireCooldownTimer = _gameSettings.PlayerFireCooldown;
+                Audiomaster.PlayEffect(AudioEffectType.PlayerShot);
             }
         }
         public void RotateToPoint(Vector3 point)
@@ -151,10 +153,9 @@ namespace MonsteroidsArcade
 
         public void MakeDestroyed()
         {
-            IsDestroyed = true;
-            Stop();
-            LivesCount--;
-            _model.gameObject.SetActive(false);
+            Hide();
+            Audiomaster.PlayEffect(AudioEffectType.ShipDestroyed);
+            LivesCount--;            
             if (LivesCount <= 0)
             {
                 _gameManager.GameOver();
@@ -165,6 +166,14 @@ namespace MonsteroidsArcade
                 _stateChangeTimer = _gameSettings.RespawnDelay;
                 _isRespawning = true;
             }
+
+        }
+        public void Hide()
+        {
+            IsDestroyed = true;
+            _model.gameObject.SetActive(false);
+            Stop();
+            _isRespawning = false;
         }
 
     }
