@@ -18,7 +18,7 @@ MonoBehaviour:
   _mediumAsteroidMaxSpeed: 10
   _bigAsteroidMinSpeed: 3
   _bigAsteroidMaxSpeed: 6
-  _playerLivesCount: 3
+  _playerLivesCount: 1
   _startAsteroidsCount: 2
   _asteroidsPerLevelSurplus: 2
   _startInvincibilityTime: 3
@@ -32,3 +32,7 @@ MonoBehaviour:
   _ufoMinFireCooldown: 2
   _ufoMaxFireColldown: 5
   _speedCoefficient: 10
+  _bigAsteroidScore: 20
+  _mediumAsteroidScore: 50
+  _smallAsteroidScore: 100
+  _ufoScore: 500

@@ -2,20 +2,23 @@
 using System.Collections.Generic;
 using UnityEngine;
 using System;
-using UnityEngine.UI;
+
 
 namespace MonsteroidsArcade
 {
     public sealed class GameManager : MonoBehaviour
     {
         [SerializeField] private GameSettings _gameSettings;
-        [SerializeField] private RectTransform _gameZoneHost;
+        
         public static GameManager Current { get; private set; }
         public PlayerController PlayerController { get; private set; }
         public MotionCalculator MotionCalculator { get; private set; }
-        public RectTransform GameZoneHost => _gameZoneHost;
+        public RectTransform GameZoneHost { get; private set; }
         public GameSettings GameSettings => _gameSettings;
-        private MainMenuUI _mainMenuUI;
+        public int Score { get; private set; }
+
+        private UIManager _uiManager;
+
         private Action<bool> _pauseEvent;
         private UFO _ufo;
         private bool _gameStarted = false, _isPaused = true,_waitForNextRound = false, _gameOver = false, _ufoLaunched = false;
@@ -36,15 +39,7 @@ namespace MonsteroidsArcade
             {
                 Debug.Log("game settings undefined, switching to default");
                 _gameSettings = new GameSettings();
-            }
-            //
-            _mainMenuUI = FindObjectOfType<MainMenuUI>();
-            if (_mainMenuUI == null)
-            {
-                Debug.Log("Error - No main menu script found");
-                return;
-            }
-            _mainMenuUI.Prepare(this);
+            }                
             //
             PlayerController = FindObjectOfType<PlayerController>();
             if (PlayerController == null)
@@ -54,12 +49,22 @@ namespace MonsteroidsArcade
             }
             PlayerController.Prepare(this);
             //
+            _uiManager = FindObjectOfType<UIManager>();
+            if (_uiManager == null)
+            {
+                Debug.Log("Error - UI Manager not found");
+                return;
+            }
+            _uiManager.Prepare(this, PlayerController);
+            _uiManager.ChangeStatus(GameUIStatus.MainMenu);
+            GameZoneHost = _uiManager.GameZone;
+            //
             MotionCalculator = GetComponent<MotionCalculator>();
             if (MotionCalculator == null) MotionCalculator = gameObject.AddComponent<MotionCalculator>();
-            MotionCalculator.Prepare(this, PlayerController);
+            MotionCalculator.Prepare(this, PlayerController, GameZoneHost);
             PlayerController.AssignMotionCalculator(MotionCalculator);
             //
-            _mainMenuUI.ActivateWindow(false);
+            
         }
 
         public void SubscribeToPauseEvent(IPausable ip)
@@ -72,7 +77,7 @@ namespace MonsteroidsArcade
         {
             if (!_gameStarted)
             {
-                PlayerController.Spawn();
+                PlayerController.Spawn(true);
                 _gameStarted = true;
                 _gameOver = false;
                 _waitForNextRound = false;
@@ -83,6 +88,9 @@ namespace MonsteroidsArcade
                 MotionCalculator.CreateBigAsteroids(_asteroidsCount);
                 _ufoTimer = _gameSettings.GetUfoTime();
                 _ufoLaunched = false;
+                Score = 0;
+                //
+                _uiManager.ChangeStatus(GameUIStatus.Playmode);
             }
         }
 
@@ -132,18 +140,28 @@ namespace MonsteroidsArcade
                 _ufoTimer = _gameSettings.GetUfoTime();
             }
         }
+        public void AddScore(int val)
+        {
+            Score += val;
+        }
 
         public void GameOver()
         {
             _gameOver = true;
-            Debug.Log("game over");
+            _uiManager.ChangeStatus(GameUIStatus.GameOver);
         }
 
         public void PauseSwitch()
         {
             _isPaused = !_isPaused;
             _pauseEvent(IsPaused);
-            _mainMenuUI.ActivateWindow(true);
+            _uiManager.ChangeStatus(IsPaused? GameUIStatus.PauseWindow : GameUIStatus.Playmode);
+        }
+
+        public void ReturnToMenu()
+        {
+            MotionCalculator.DestroyAllObjects();
+            _uiManager.ChangeStatus(GameUIStatus.MainMenu);
         }
     }
 }

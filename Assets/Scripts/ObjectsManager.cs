@@ -81,6 +81,14 @@ namespace MonsteroidsArcade
             }
             else Debug.Log("warning - wrong type of pooling object");
         }
+        public void ReturnToPool(in ICollection<SpaceObject> list, SpaceObjectType type)
+        {
+            if (_pools.ContainsKey(type))
+            {
+                _pools[type].ReturnToPool(list);
+            }
+            else Debug.Log("warning - wrong type of pooling object");            
+        }
 
         private class PoolCell
         {
@@ -112,6 +120,17 @@ namespace MonsteroidsArcade
                 so.Stop();
                 so.gameObject.SetActive(false);
                 _pool.Push(so);
+            }
+            public void ReturnToPool(in ICollection<SpaceObject> list)
+            {
+                int count0 = _pool.Count;
+                var arr = new SpaceObject[count0 + list.Count];
+                if (count0 != 0)
+                {
+                    _pool.CopyTo(arr, 0);
+                }
+                list.CopyTo(arr, count0);
+                _pool = new Stack<SpaceObject>(arr);
             }
         }
     }

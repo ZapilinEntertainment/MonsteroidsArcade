@@ -45,7 +45,7 @@ namespace MonsteroidsArcade
         }
 
 
-        public void Spawn()
+        public void Spawn(bool resetLivesCounter)
         {
             Stop();
             transform.position = new Vector3(Screen.width / 2f, Screen.height / 2f, 0f);
@@ -56,6 +56,8 @@ namespace MonsteroidsArcade
             _stateChangeTimer = _gameManager.GameSettings.StartInvincibilityTime;
             IsInvincible = true;
             _fireCooldownTimer = 0f;
+            if (resetLivesCounter) LivesCount = _gameSettings.PlayerLivesCount;
+            gameObject.SetActive(true);
         }
 
         private void Update()

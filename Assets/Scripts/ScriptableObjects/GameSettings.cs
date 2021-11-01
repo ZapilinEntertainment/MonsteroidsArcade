@@ -28,9 +28,16 @@ namespace MonsteroidsArcade
         [SerializeField] private float _ufoMinTime = 20f;
         [SerializeField] private float _ufoMaxTime = 40f, _ufoFlightTime = 10f, _ufoMinFireCooldown = 2f, _ufoMaxFireColldown = 5f;
          [Header("Коэффициент скоростей движения всех объектов")][SerializeField] private float _speedCoefficient = 10f;
+        [Space]
+        [Header("Очки")] [SerializeField] private int _bigAsteroidScore = 20;
+        [SerializeField] private int _mediumAsteroidScore = 50, _smallAsteroidScore = 100, _ufoScore = 500;
         public int PlayerLivesCount => _playerLivesCount;
         public int StartAsteroidsCount => _startAsteroidsCount;
         public int AsteroidsPerLevelSurplus => _asteroidsPerLevelSurplus;
+        public int SmallAsteroidScore => _smallAsteroidScore;
+        public int MediumAsteroidScore => _mediumAsteroidScore;
+        public int BigAsteroidScore => _bigAsteroidScore;
+        public int UfoScore => _ufoScore;
         public float StartInvincibilityTime => _startInvincibilityTime;
         public float RespawnDelay => _respawnDelay;
         public float PlayerFireCooldown => _playerFireCooldown;
@@ -60,5 +67,6 @@ namespace MonsteroidsArcade
         {
             return Random.value * (_ufoMaxFireColldown - _ufoMinFireCooldown) + _ufoMinFireCooldown;
         }
+        
     }
 }

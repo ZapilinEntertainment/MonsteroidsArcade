@@ -25,7 +25,7 @@ namespace MonsteroidsArcade {
         private ObjectsManager _poolManager;
         private GameSettings _gameSettings;
         private System.Action<float> _canvasScaleUpdateEvent;
-        public void Prepare(GameManager gm, PlayerController pc)
+        public void Prepare(GameManager gm, PlayerController pc, RectTransform _gameZone)
         {
             _gameManager = gm;
             _isPaused = _gameManager.IsPaused;
@@ -47,7 +47,7 @@ namespace MonsteroidsArcade {
             _asteroidsClearList = new HashSet<SpaceObject>();
             _asteroidsCreateList = new List<(Vector3, Vector3, bool)>();
             //           
-            _poolManager = new ObjectsManager(_gameManager.GameZoneHost);
+            _poolManager = new ObjectsManager(_gameZone);
             //
             _screenWidth = Screen.width;
             _screenHeight = Screen.height;
@@ -282,7 +282,7 @@ namespace MonsteroidsArcade {
                 {
                     if (ObjectsPresented(CalculatingType.PlayerBullet))
                     {
-                        int count = _asteroidsList.Count;
+                        int count = _asteroidsList.Count, score = 0;
                         foreach (var a in _playerBulletsList)
                         {
                             r0 = a.Key.Radius;
@@ -297,13 +297,17 @@ namespace MonsteroidsArcade {
                                     _needToClear = true;
                                     if (hitSO.ObjectType != SpaceObjectType.SmallAsteroid)
                                     {
+                                        bool bigAsteroid = hitSO.ObjectType == SpaceObjectType.BigAsteroid;
                                         Vector3 dir = hitSO.MoveVector.normalized;
-                                        _asteroidsCreateList.Add((hitSO.transform.position, dir, hitSO.ObjectType == SpaceObjectType.BigAsteroid));
+                                        _asteroidsCreateList.Add((hitSO.transform.position, dir, bigAsteroid));
                                         _needToCreateNewAsteroids = true;
+                                        score += bigAsteroid ? _gameSettings.BigAsteroidScore : _gameSettings.MediumAsteroidScore;
                                     }
+                                    else score += _gameSettings.SmallAsteroidScore;
                                 }
                             }
                         }
+                        if (score != 0) _gameManager.AddScore(score);
                     }
                 }
                 else
@@ -418,6 +422,37 @@ namespace MonsteroidsArcade {
             _poolManager.ReturnToPool(so);
         }
 
+        public void DestroyAllObjects()
+        {
+            _playerController.gameObject.SetActive(false);
+            if (_presentedObjectsMask[(int)CalculatingType.UFO])
+            {
+                _ufo.Stop();
+                _ufo.gameObject.SetActive(false);
+            }
+            if (_presentedObjectsMask[(int)CalculatingType.PlayerBullet])
+            {
+                _poolManager.ReturnToPool(_playerBulletsList.Keys, SpaceObjectType.PlayerBullet);
+            }
+            _playerBulletsList.Clear();
+            //
+            if (_presentedObjectsMask[(int)CalculatingType.UfoBullet])
+            {
+                _poolManager.ReturnToPool(_ufoBulletsList.Keys, SpaceObjectType.UFOBullet);
+            }
+            _ufoBulletsList.Clear();
+            //
+            if (_presentedObjectsMask[(int)CalculatingType.Asteroids])
+            {
+                foreach (var a in _asteroidsList.Keys)
+                {
+                    _poolManager.ReturnToPool(a);
+                }
+            }
+            _asteroidsList.Clear();
+            //
+            _presentedObjectsMask.SetAll(false);
+        }
         public void SetPause(bool x)
         {
             _isPaused = x;
