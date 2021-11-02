@@ -7,9 +7,12 @@ namespace MonsteroidsArcade
     public sealed class ObjectsManager
     {
         private Dictionary<SpaceObjectType, PoolCell> _pools;
+        private Explosion[] _explosions;
         private Transform _objectsHost;
+        private int _lastUsedExplosionIndex = 0;
         private readonly SpaceObjectType _bulletsMask = SpaceObjectType.PlayerBullet | SpaceObjectType.UFOBullet;
         private const string PREFABS_PATH = "Prefabs/";
+        private const int MAX_EXPLOSIONS_COUNT = 4;
         public override bool Equals(object obj)
         {
             // Check for null values and compare run-time types.
@@ -42,6 +45,16 @@ namespace MonsteroidsArcade
                 { SpaceObjectType.UFOBullet, bulletCell}
             };
             _objectsHost = i_objectsHost;
+            //
+            _explosions = new Explosion[MAX_EXPLOSIONS_COUNT];
+            GameObject _explosionPref = Resources.Load<GameObject>(PREFABS_PATH + "explosion");
+            Explosion e;
+            for (int i = 0; i < MAX_EXPLOSIONS_COUNT; i++)
+            {
+                e = Object.Instantiate(_explosionPref, _objectsHost).GetComponent<Explosion>();
+                e.Deactivate();
+                _explosions[i] = e;
+            }
         }
 
         public SpaceObject CreateObject(SpaceObjectType type, Vector3 position)
@@ -72,7 +85,11 @@ namespace MonsteroidsArcade
                 }
             }
         }
-
+        public void CreateExplosion(Vector3 position, float size)
+        {
+            _explosions[_lastUsedExplosionIndex++].Explode(position, size);
+            if (_lastUsedExplosionIndex >= MAX_EXPLOSIONS_COUNT) _lastUsedExplosionIndex = 0;
+        }
         public void ReturnToPool(SpaceObject so)
         {
             if (_pools.ContainsKey(so.ObjectType))

@@ -612,6 +612,8 @@ MonoBehaviour:
   _gameUiScript: {fileID: 3091810721463947303}
   _failPanelScript: {fileID: 3091810721577988682}
   _gameZone: {fileID: 3091810721737404273}
+  _background: {fileID: 3091810721763800164}
+  _backgroundSpeed: 0.01
 --- !u!1 &3091810720508912776
 GameObject:
   m_ObjectHideFlags: 0
@@ -2558,7 +2560,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 27.95
+  m_fontSize: 28
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

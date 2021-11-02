@@ -145,8 +145,7 @@ namespace MonsteroidsArcade
             if (_ufoLaunched)
             {
                 _ufoLaunched = false;
-                _ufoTimer = _gameSettings.GetUfoTime();
-                Audiomaster.PlayEffect(AudioEffectType.UfoDefeated);
+                _ufoTimer = _gameSettings.GetUfoTime();                
             }
         }
         public void AddScore(int val)

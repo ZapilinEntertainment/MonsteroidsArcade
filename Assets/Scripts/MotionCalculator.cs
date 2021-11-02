@@ -25,6 +25,7 @@ namespace MonsteroidsArcade {
         private ObjectsManager _poolManager;
         private GameSettings _gameSettings;
         private System.Action<float> _canvasScaleUpdateEvent;
+        private const float SHIP_EXPLOSION_SIZE = 6f, BULLET_EXPLOSION_SIZE = 3f;
         public void Prepare(GameManager gm, PlayerController pc, RectTransform _gameZone)
         {
             _gameManager = gm;
@@ -249,6 +250,7 @@ namespace MonsteroidsArcade {
                             DestroyPlayer();
                             DestroyUfoBullet(so);
                             Audiomaster.PlayEffect(AudioEffectType.Blast);
+                            _poolManager.CreateExplosion(pos0, SHIP_EXPLOSION_SIZE);
                         }
                     }
                     if (_checkFurther && ObjectsPresented(CalculatingType.Asteroids))
@@ -258,6 +260,7 @@ namespace MonsteroidsArcade {
                             DestroyPlayer();
                             DestroyAsteroid(so);
                             Audiomaster.PlayEffect(AudioEffectType.Blast);
+                            _poolManager.CreateExplosion(pos0, SHIP_EXPLOSION_SIZE);
                         }
                     }
                 }
@@ -274,6 +277,8 @@ namespace MonsteroidsArcade {
                             DestroyUFO();
                             DestroyPlayerBullet(so);
                             Audiomaster.PlayEffect(AudioEffectType.Blast);
+                            _poolManager.CreateExplosion(pos0, SHIP_EXPLOSION_SIZE);
+                            Audiomaster.PlayEffect(AudioEffectType.UfoDefeated);
                         }
                     }
                     if (_checkFurther && ObjectsPresented(CalculatingType.Asteroids))
@@ -283,6 +288,7 @@ namespace MonsteroidsArcade {
                             DestroyUFO();
                             DestroyAsteroid(so);
                             Audiomaster.PlayEffect(AudioEffectType.Blast);
+                            _poolManager.CreateExplosion(pos0, SHIP_EXPLOSION_SIZE);
                         }
                     }
                 }
@@ -300,6 +306,7 @@ namespace MonsteroidsArcade {
                             if (IsColliding(_asteroidsList, out hitSO))
                             {
                                 _playerBulletsClearList.Add(a.Key);
+                                _poolManager.CreateExplosion(pos0, BULLET_EXPLOSION_SIZE);
                                 if (!_asteroidsClearList.Contains(hitSO))
                                 {
                                     _asteroidsClearList.Add(hitSO);
