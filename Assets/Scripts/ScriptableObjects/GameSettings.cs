@@ -11,16 +11,17 @@ namespace MonsteroidsArcade
     {
         // #settings геймплейные настройки 
 
-        [Header("Настройка скоростей астероидов")]
+        [Header("Asteroids Settings")]
         [SerializeField]
         private float _smallAsteroidMinSpeed = 5f;
         [SerializeField]
         private float _smallAsteroidMaxSpeed = 10f,
             _mediumAsteroidMinSpeed = 3f, _mediumAsteroidMaxSpeed = 6f,
             _bigAsteroidMinSpeed = 1.5f, _bigAsteroidMaxSpeed = 3f;
-        [Space]
-        [SerializeField] private int _playerLivesCount = 3;
         [SerializeField] private int _startAsteroidsCount = 2, _asteroidsPerLevelSurplus = 2;
+        [SerializeField] private float _asteroidsSpawnAngle = 45f;
+        [Space]
+        [SerializeField] private int _playerLivesCount = 3;        
         [SerializeField] private float _startInvincibilityTime = 3f, _respawnDelay = 0.5f, _playerFireCooldown = 1f / 3f,
             _bulletSpeed = 10f, _nextRoundDelay = 2f;
         [Space]
@@ -37,6 +38,8 @@ namespace MonsteroidsArcade
         public int SmallAsteroidScore => _smallAsteroidScore;
         public int MediumAsteroidScore => _mediumAsteroidScore;
         public int BigAsteroidScore => _bigAsteroidScore;
+        public float AsteroidsSpawnAngle => _asteroidsSpawnAngle;
+
         public int UfoScore => _ufoScore;
         public float StartInvincibilityTime => _startInvincibilityTime;
         public float RespawnDelay => _respawnDelay;

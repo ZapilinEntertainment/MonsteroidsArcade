@@ -352,7 +352,8 @@ namespace MonsteroidsArcade {
                 {
                     float speed;
                     SpaceObjectType type;
-                    Quaternion rot0 = Quaternion.Euler(0f, 0f, 45f),rot1 = Quaternion.Euler(0f, 0f, -45f);
+                    float angle = _gameSettings.AsteroidsSpawnAngle;
+                    Quaternion rot0 = Quaternion.Euler(0f, 0f,angle),rot1 = Quaternion.Euler(0f, 0f, -angle);
                     Vector3 v;
                     foreach (var a in _asteroidsCreateList)
                     {
