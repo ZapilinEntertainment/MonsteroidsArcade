@@ -269,7 +269,7 @@ namespace MonsteroidsArcade {
                 {
                     r0 = _ufo.Radius;
                     pos0 = _ufoTransform.position;
-
+                    _checkFurther = true;
                     if (ObjectsPresented(CalculatingType.PlayerBullet))
                     {
                         if (IsColliding(_playerBulletsList, out so))
@@ -377,7 +377,7 @@ namespace MonsteroidsArcade {
                         pos1 = so.Value.position;
                         xd = pos0.x - pos1.x; xd *= xd;
                         yd = pos0.y - pos1.y; yd *= yd;
-                        r = r0 - so.Key.Radius; r *= r;
+                        r = r0 + so.Key.Radius; r *= r * 0.95f;
                         if (xd + yd < r)
                         {
                             _hitObject = so.Key;
