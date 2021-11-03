@@ -50,7 +50,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _type: 16
-  _radius: 20
+  _radius: 22
 --- !u!1 &3425716773536546869
 GameObject:
   m_ObjectHideFlags: 0

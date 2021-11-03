@@ -161,7 +161,8 @@ namespace MonsteroidsArcade {
                 _ufo = _poolManager.CreateObject(SpaceObjectType.UFO, position) as UFO;
                 _ufo.AssignLinks(_gameSettings, this, _playerTransform);
                 _ufoTransform = _ufo.transform;                
-                _canvasScaleUpdateEvent += _ufo.ChangeCanvasScale; 
+                _canvasScaleUpdateEvent += _ufo.ChangeCanvasScale;
+                _ufo.ChangeCanvasScale(_canvasScale);
             }
             else
             {
